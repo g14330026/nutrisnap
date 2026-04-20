@@ -4,8 +4,8 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: "ok" });
   }
 
-  const LINE_TOKEN = "你的Line Token";
-  const OPENAI_KEY = "你的OpenAI Key";
+  const LINE_TOKEN = "1tIxYulOCEIQJ/OkbwaoMkbwca5JwuSiZcLOpJ/JnltyWRmXjqDiDhZ0k584JDfBEsWjO+QezS2CGcIl9+/k4NCwZVq/Cog50byxyt7w8UpqtSipTqeKIq1XO6qR9oJnCik49ocLaN9arBiwrpq5CQdB04t89/1O/w1cDnyilFU=";
+  const OPENAI_KEY = "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";
 
   try {
     const events = req.body.events || [];
