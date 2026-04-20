@@ -34,7 +34,7 @@ export default async function handler(req, res) {
             messages: [{
               role: "user",
               content: [
-                { type: "text", text: "你是專業營養師。分析這張食物照片，用繁體中文，每項獨立一行：食物內容：\n熱量：\n蛋白質：\n蔬菜評級：\n建議：" },
+                { type: "text", text: "You are a nutritionist. Analyze this food photo and reply in Traditional Chinese. Format each item on a new line: food content, calories, protein, vegetable rating (low/medium/high), advice." },
                 { type: "image_url", image_url: { url: `data:image/jpeg;base64,${b64}` } }
               ]
             }]
