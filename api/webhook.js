@@ -44,8 +44,8 @@ export default async function handler(req, res) {
             }]
           })
         });
-        const aiData = await aiRes.json();
-        const text = aiData.choices[0].message.content;
+        console.log("OpenAI response:", JSON.stringify(aiData));
+        const text = aiData?.choices?.[0]?.message?.content || "AI 辨識失敗，請重試";
 
         await fetch("https://api.line.me/v2/bot/reply", {
           method: "POST",
