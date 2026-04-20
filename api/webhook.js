@@ -4,19 +4,15 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: "ok" });
   }
 
-  const LINE_TOKEN = "1tIxYulOCEIQJ/OkbwaoMkbwca5JwuSiZcLOpJ/JnltyWRmXjqDiDhZ0k584JDfBEsWjO+QezS2CGcIl9+/k4NCwZVq/Cog50byxyt7w8UpqtSipTqeKIq1XO6qR9oJnCik49ocLaN9arBiwrpq5CQdB04t89/1O/w1cDnyilFU=";
-  const OPENAI_KEY = "sk-proj-jGqkbvE0Kmf8WrkRJe2uXVZp2U6Uv9Bx-P5QM86Xxn-zyQmzEl_kI07mIa3B1D4wzy70RndN6nT3BlbkFJ_UEeHz3Qtay7o2tvTGIywfJh_96_M8gHw-wnxvcxCSBgzCY-SiaK08XK1wuLWxjJuvfPL8QS8";
-  const SHEET_ID   = "1CROu1WqL9ophrV4a9JF_WfPuWRvOF71DW-WyZe3VI40";
+  const LINE_TOKEN = "你的Line Token";
+  const OPENAI_KEY = "你的OpenAI Key";
 
   try {
-    const body = req.body;
-    const events = body.events || [];
-
+    const events = req.body.events || [];
     for (const ev of events) {
       if (ev.type !== "message") continue;
-      const uid   = ev.source.userId;
       const reply = ev.replyToken;
-      const msg   = ev.message;
+      const msg = ev.message;
 
       if (msg.type === "image") {
         const imgRes = await fetch(
@@ -44,8 +40,10 @@ export default async function handler(req, res) {
             }]
           })
         });
-        console.log("OpenAI response:", JSON.stringify(aiData));
-        const text = aiData?.choices?.[0]?.message?.content || "AI 辨識失敗，請重試";
+
+        const aiJson = await aiRes.json();
+        console.log("AI response:", JSON.stringify(aiJson));
+        const text = aiJson?.choices?.[0]?.message?.content || "AI 辨識失敗，請重試";
 
         await fetch("https://api.line.me/v2/bot/reply", {
           method: "POST",
@@ -55,7 +53,7 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             replyToken: reply,
-            messages: [{ type: "text", text: text }]
+            messages: [{ type: "text", text }]
           })
         });
 
@@ -74,7 +72,7 @@ export default async function handler(req, res) {
       }
     }
   } catch (err) {
-    console.error(err);
+    console.error("Error:", err);
   }
 
   res.status(200).json({ status: "ok" });
