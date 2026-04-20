@@ -4,9 +4,8 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: "ok" });
   }
 
-  const LINE_TOKEN = "1tIxYulOCEIQJ/OkbwaoMkbwca5JwuSiZcLOpJ/JnltyWRmXjqDiDhZ0k584JDfBEsWjO+QezS2CGcIl9+/k4NCwZVq/Cog50byxyt7w8UpqtSipTqeKIq1XO6qR9oJnCik49ocLaN9arBiwrpq5CQdB04t89/1O/w1cDnyilFU=";
-  const OPENAI_KEY = "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";
-
+  const LINE_TOKEN = process.env.LINE_TOKEN;
+const OPENAI_KEY = process.env.OPENAI_KEY;
   try {
     const events = req.body.events || [];
     for (const ev of events) {
