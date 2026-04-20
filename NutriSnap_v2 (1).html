@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NutriSnap - AI 營養分析</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #F5F5F5; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+.container { width: 100%; max-width: 500px; }
+.header { text-align: center; margin-bottom: 1.5rem; }
+.header h1 { font-size: 28px; font-weight: 700; color: #1A3C34; }
+.header p { font-size: 14px; color: #757575; margin-top: 4px; }
+.card { background: #fff; border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.section-title { font-size: 13px; font-weight: 600; color: #212121; margin-bottom: 8px; }
+.api-label { font-size: 12px; color: #757575; margin-bottom: 4px; }
+.api-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #E0E0E0; font-size: 13px; font-family: monospace; color: #212121; background: #FAFAFA; outline: none; }
+.api-input:focus { border-color: #1D9E75; }
+.upload-zone { border: 2px dashed #C8E6C9; border-radius: 12px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: background 0.15s; background: #F9FBF9; }
+.upload-zone:hover { background: #F1F8F1; }
+.upload-zone.dragover { border-color: #1D9E75; background: #E8F5E9; }
+.upload-icon { font-size: 40px; margin-bottom: 8px; }
+.upload-text { font-size: 14px; color: #757575; }
+.upload-btn-label { display: inline-block; margin-top: 12px; padding: 8px 24px; border: 1px solid #BDBDBD; border-radius: 8px; font-size: 14px; color: #212121; background: #fff; cursor: pointer; }
+.upload-btn-label:hover { background: #F5F5F5; }
+#fileInput { display: none; }
+.preview-wrap { margin-top: 1rem; border-radius: 12px; overflow: hidden; display: none; }
+.preview-wrap img { width: 100%; max-height: 280px; object-fit: cover; display: block; }
+.analyze-btn { width: 100%; margin-top: 1rem; padding: 14px; border-radius: 10px; border: none; background: #1D9E75; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; display: none; transition: background 0.15s; }
+.analyze-btn:hover { background: #0F6E56; }
+.analyze-btn:disabled { background: #A5D6A7; cursor: not-allowed; }
+.loading { text-align: center; padding: 2rem; display: none; }
+.spinner { width: 32px; height: 32px; border: 3px solid #E0E0E0; border-top-color: #1D9E75; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: #757575; }
+.error-box { margin-top: 0.75rem; background: #FFEBEE; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #C62828; display: none; }
+.result-card { background: #fff; border-radius: 16px; padding: 1.25rem; margin-top: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); display: none; }
+.result-header { font-size: 12px; color: #757575; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.food-name { font-size: 18px; font-weight: 700; color: #1A3C34; margin-bottom: 12px; }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.metric { background: #F5F5F5; border-radius: 10px; padding: 12px 8px; text-align: center; }
+.metric-val { font-size: 22px; font-weight: 700; color: #1A3C34; }
+.metric-label { font-size: 11px; color: #757575; margin-top: 2px; }
+.veggie-badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; margin-top: 4px; }
+.veggie-low { background: #FFEBEE; color: #C62828; }
+.veggie-mid { background: #FFF8E1; color: #E65100; }
+.veggie-high { background: #E8F5E9; color: #2E7D32; }
+.advice-box { background: #E8F5E9; border-radius: 10px; padding: 12px 14px; font-size: 14px; color: #1B5E20; line-height: 1.5; }
+.advice-label { font-size: 11px; font-weight: 600; color: #388E3C; margin-bottom: 4px; }
+.save-btn { width: 100%; margin-top: 1rem; padding: 12px; border-radius: 10px; border: 1.5px solid #1D9E75; background: #fff; color: #1D9E75; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.save-btn:hover { background: #E8F5E9; }
+.save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.saved-msg { text-align: center; font-size: 13px; color: #388E3C; margin-top: 6px; display: none; }
+table.history { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.history th { text-align: left; padding: 6px 8px; color: #757575; font-weight: 500; border-bottom: 1px solid #E0E0E0; }
+table.history td { padding: 8px 8px; border-bottom: 1px solid #F5F5F5; color: #212121; }
+table.history tr:last-child td { border-bottom: none; }
+.empty-history { text-align: center; padding: 1rem; font-size: 13px; color: #BDBDBD; }
+.total-cal { text-align: right; font-size: 13px; color: #1D9E75; font-weight: 600; margin-top: 8px; }
+.sheet-status { font-size: 12px; padding: 4px 10px; border-radius: 99px; display: inline-block; margin-top: 6px; }
+.sheet-ok { background: #E8F5E9; color: #2E7D32; }
+.sheet-err { background: #FFEBEE; color: #C62828; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🍱 NutriSnap</h1>
+    <p>上傳食物照片，AI 幫你分析營養成分</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">OpenAI API Key</div>
+    <div class="api-label">貼上你的 Key（只存在本機，不會上傳）</div>
+    <input class="api-input" type="password" id="apiKey" placeholder="sk-proj-..." />
+  </div>
+
+  <div class="card">
+    <div class="upload-zone" id="dropZone">
+      <div class="upload-icon">📷</div>
+      <div class="upload-text">拖曳食物照片到這裡</div>
+      <label class="upload-btn-label" for="fileInput">選擇照片</label>
+      <input type="file" id="fileInput" accept="image/*" />
+    </div>
+    <div class="preview-wrap" id="previewWrap">
+      <img id="preview" />
+    </div>
+    <button class="analyze-btn" id="analyzeBtn">分析營養成分</button>
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">AI 正在分析中，請稍候...</div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-header">分析結果</div>
+    <div class="food-name" id="foodName"></div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-val" id="metCal">-</div>
+        <div class="metric-label">熱量 (kcal)</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="metPro">-</div>
+        <div class="metric-label">蛋白質 (g)</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="metVegVal">-</div>
+        <div class="metric-label">蔬菜</div>
+        <div id="veggBadge"></div>
+      </div>
+    </div>
+    <div class="advice-box">
+      <div class="advice-label">AI 建議</div>
+      <div id="adviceBox"></div>
+    </div>
+    <button class="save-btn" id="saveBtn">
+      <span>儲存到 Google Sheet</span>
+    </button>
+    <div class="saved-msg" id="savedMsg"></div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <div class="section-title">今日飲食記錄</div>
+    <div id="historyBody"><div class="empty-history">還沒有記錄，快上傳第一張照片吧！</div></div>
+  </div>
+</div>
+
+<script>
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbz9E_kWOgzBKMb8Es_MNfY6zmVMw3SYxWa2bXoPtbu3IYifdxpU_r3PQY4jHxyJu4NQ/exec";
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const preview = document.getElementById('preview');
+const previewWrap = document.getElementById('previewWrap');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const loading = document.getElementById('loading');
+const loadingText = document.getElementById('loadingText');
+const resultCard = document.getElementById('resultCard');
+const errorBox = document.getElementById('errorBox');
+let currentFile = null;
+let records = [];
+let lastResult = null;
+
+function showPreview(file) {
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    previewWrap.style.display = 'block';
+    analyzeBtn.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+fileInput.addEventListener('change', e => { if (e.target.files[0]) showPreview(e.target.files[0]); });
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) showPreview(e.dataTransfer.files[0]);
+});
+
+analyzeBtn.addEventListener('click', async () => {
+  const key = document.getElementById('apiKey').value.trim();
+  if (!key) { showError('請先填入 OpenAI API Key'); return; }
+  if (!currentFile) { showError('請先選擇照片'); return; }
+
+  analyzeBtn.disabled = true;
+  loading.style.display = 'block';
+  loadingText.textContent = 'AI 正在分析中，請稍候...';
+  resultCard.style.display = 'none';
+  errorBox.style.display = 'none';
+  document.getElementById('savedMsg').style.display = 'none';
+
+  try {
+    const b64 = await toBase64(currentFile);
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: [
+          { type: 'text', text: 'You are a nutritionist. Analyze this food photo. Reply ONLY in Traditional Chinese, one item per line, exactly this format:\n食物內容：\n熱量：(number only, kcal)\n蛋白質：(number only, g)\n蔬菜評級：(少 or 中 or 多)\n建議：' },
+          { type: 'image_url', image_url: { url: b64 } }
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.choices[0].message.content;
+    showResult(text);
+  } catch (err) {
+    showError('分析失敗：' + err.message);
+  } finally {
+    analyzeBtn.disabled = false;
+    loading.style.display = 'none';
+  }
+});
+
+function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function get(text, key) {
+  const m = text.match(new RegExp(key + '[：:]\\s*([^\\n]+)'));
+  return m ? m[1].trim() : '-';
+}
+
+function showResult(text) {
+  const now = new Date();
+  const h = now.getHours();
+  const meal = h < 10 ? '早餐' : h < 14 ? '午餐' : h < 21 ? '晚餐' : '點心';
+  const timeStr = now.toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  const food = get(text, '食物內容');
+  const cal = get(text, '熱量');
+  const pro = get(text, '蛋白質');
+  const veg = get(text, '蔬菜評級');
+  const adv = get(text, '建議');
+
+  lastResult = { time: timeStr, meal, food, cal, pro, veg, adv };
+
+  document.getElementById('foodName').textContent = food;
+  document.getElementById('metCal').textContent = cal.replace(/[^\d]/g, '') || cal;
+  document.getElementById('metPro').textContent = pro.replace(/[^\d]/g, '') || pro;
+  document.getElementById('metVegVal').textContent = veg;
+
+  const cls = veg === '多' ? 'veggie-high' : veg === '中' ? 'veggie-mid' : 'veggie-low';
+  const label = veg === '多' ? '充足' : veg === '中' ? '普通' : '不足';
+  document.getElementById('veggBadge').innerHTML = '<span class="veggie-badge ' + cls + '">' + label + '</span>';
+  document.getElementById('adviceBox').textContent = adv;
+
+  const saveBtn = document.getElementById('saveBtn');
+  saveBtn.disabled = false;
+  saveBtn.querySelector('span').textContent = '儲存到 Google Sheet';
+
+  resultCard.style.display = 'block';
+}
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  if (!lastResult) return;
+  const saveBtn = document.getElementById('saveBtn');
+  const savedMsg = document.getElementById('savedMsg');
+  saveBtn.disabled = true;
+  saveBtn.querySelector('span').textContent = '儲存中...';
+  savedMsg.style.display = 'none';
+
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(lastResult)
+    });
+    records.push(lastResult);
+    updateHistory();
+    savedMsg.className = 'saved-msg sheet-status sheet-ok';
+    savedMsg.textContent = '已儲存到 Google Sheet！';
+    savedMsg.style.display = 'block';
+    saveBtn.querySelector('span').textContent = '已儲存';
+  } catch (err) {
+    savedMsg.className = 'saved-msg sheet-status sheet-err';
+    savedMsg.textContent = '儲存失敗：' + err.message;
+    savedMsg.style.display = 'block';
+    saveBtn.disabled = false;
+    saveBtn.querySelector('span').textContent = '重新儲存';
+  }
+});
+
+function updateHistory() {
+  const body = document.getElementById('historyBody');
+  if (records.length === 0) {
+    body.innerHTML = '<div class="empty-history">還沒有記錄，快上傳第一張照片吧！</div>';
+    return;
+  }
+  let totalCal = 0;
+  const rows = records.map(r => {
+    totalCal += parseInt(r.cal) || 0;
+    return '<tr><td>' + r.time + '</td><td>' + r.meal + '</td><td>' + r.food + '</td><td>' + r.cal + '</td><td>' + r.veg + '</td></tr>';
+  }).join('');
+  body.innerHTML =
+    '<table class="history"><thead><tr><th>時間</th><th>餐別</th><th>食物</th><th>熱量</th><th>蔬菜</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div class="total-cal">今日總熱量：' + totalCal + ' kcal</div>';
+}
+
+updateHistory();
+</script>
+</body>
+</html>
